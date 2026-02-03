@@ -1,0 +1,51 @@
+.bg-name {
+	background-color: #aaa !important;
+}
+.ui-jqgrid-bdiv {
+overflow-y: hidden !important;
+}
+.select2-results {
+	font-size: 12px;
+}
+
+/* Jspreadsheet remove row number column */
+table.jexcel colgroup col:first-child {
+	width: 0 !important;
+}
+table.jexcel.jexcel_overflow {
+	width: 100%;
+}
+table.jexcel.jexcel_overflow thead {
+	font-weight: bold;
+}
+
+input[name="edittype"],
+input[name="conditional_format"],
+input[name="format"],
+#btnRefreshPreview {
+	cursor: pointer
+}
+#list1 td:hover {
+	background-color: #ccc !important;
+	cursor: pointer;
+}
+.hide-cell-child > * {
+	display: none !important;
+}
+/* making col_name appearing not editable */
+input[name="col_name"] {
+	pointer-events: none;
+	border: 0;
+	background: initial;
+}
+/* hide footer */
+#list1_pager1 {
+	display: none;
+}
+.btn {
+	border: 1px solid #ccc
+}
+
+.select2-container-multi .select2-choices .select2-search-choice {
+	line-height: 0;
+}

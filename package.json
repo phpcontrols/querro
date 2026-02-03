@@ -1,0 +1,32 @@
+{
+  "name": "csvie",
+  "version": "1.0.0",
+  "main": "index.php",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^6.1.1",
+    "@popperjs/core": "^2.5.4",
+    "bootstrap": "^3.4.1",
+    "bootstrap-select": "1.12.2",
+    "bootstrap-table": "1.11.2",
+    "clipboard": "^2.0.6",
+    "icheck": "^1.0.2",
+    "iframe-lightbox": "^0.2.11",
+    "iframe-resizer": "3.5.12",
+    "jquery": "^3.5.1",
+    "jquery-asProgress": "0.2.3",
+    "jquery-migrate": "^3.3.1",
+    "jquery-toggles": "^4.0.0",
+    "jquery-ui-dist": "^1.12.1",
+    "jquery.json-viewer": "^1.4.0",
+    "jslint": "^0.12.1",
+    "jspreadsheet-ce": "^4.10.1",
+    "moment": "^2.29.1",
+    "notifyjs-browser": "^0.4.2",
+    "nprogress": "^0.2.0",
+    "spin": "^0.0.1",
+    "twitter-bootstrap-wizard": "^1.2.0",
+    "underscore": "1.8.3"
+  }
+}

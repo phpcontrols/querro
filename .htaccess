@@ -1,0 +1,25 @@
+Options All -Indexes
+
+# DOESN'T SEEM TO WORK
+# SetEnvIf Host ^app\.phpgrid\.local/$ APP_ENV=dev
+# SetEnvIf Host ^app\.phpgrid\.com/$ APP_ENV=prod
+
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# Stop processing if already in those directories
+RewriteRule ^public/ - [L]
+RewriteRule ^resources/ - [L]
+RewriteRule ^includes/ - [L]
+RewriteRule ^build/ - [L]
+RewriteRule ^config/ - [L]
+RewriteRule ^node_modules/ - [L]
+RewriteRule ^q/ - [L]
+
+# Static resources if they exist
+RewriteCond %{DOCUMENT_ROOT}/public/$1 -f
+RewriteRule (.+) public/$1 [L]
+
+# Route all other requests
+RewriteRule (.*) public/index.php?route=$1 [L,QSA]
+</IfModule>
