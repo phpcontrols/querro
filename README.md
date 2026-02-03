@@ -1,5 +1,7 @@
 # Querro - AI Powered Database Query
 
+Website: [https://querro.io](querro.io)
+
 A web-based internal database management tool that allows users to connect and query databases using AI text-to-sql. Querro takes a pragmatic approach to web development, using proven server-side technologies to deliver reliable database management without unnecessary complexity.
 
 ## Core Features
