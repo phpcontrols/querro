@@ -56,6 +56,12 @@ cd querro
 composer install
 npm install
 
+# Install phpGrid dependencies
+cd includes/phpGrid
+composer install --ignore-platform-req=ext-gd
+npm install
+cd ../..
+
 # Setup database
 mysql -u root -p -e "CREATE DATABASE querro CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 mysql -u root -p querro < install.sql

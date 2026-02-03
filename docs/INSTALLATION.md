@@ -31,6 +31,12 @@ cd querro
 composer install
 npm install
 
+# Install phpGrid dependencies
+cd includes/phpGrid
+composer install --ignore-platform-req=ext-gd
+npm install
+cd ../..
+
 # Configure environment
 cp .env .env.local
 # Edit .env.local with your database credentials
@@ -131,7 +137,20 @@ This installs:
 
 **Note**: These become static JavaScript/CSS files in `node_modules/`. Node.js is not required after this step - Apache serves these files directly.
 
-### 4. Create Database
+### 4. Install phpGrid Dependencies
+
+phpGrid has its own dependencies that need to be installed:
+
+```bash
+cd includes/phpGrid
+composer install --ignore-platform-req=ext-gd
+npm install
+cd ../..
+```
+
+**Note**: The `--ignore-platform-req=ext-gd` flag is used because GD extension is not required for basic phpGrid functionality.
+
+### 5. Create Database
 
 Create the MySQL database with UTF-8mb4 encoding:
 
@@ -144,7 +163,7 @@ Or using MySQL client:
 CREATE DATABASE querro CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-### 5. Configure Environment
+### 6. Configure Environment
 
 Create local environment configuration:
 
@@ -172,7 +191,7 @@ Generate a secure APP_SECRET:
 php -r "echo bin2hex(random_bytes(16));"
 ```
 
-### 6. Setup Database Schema
+### 7. Setup Database Schema
 
 **Option A: SQL Import (Recommended - Faster & Simpler)**
 
@@ -204,7 +223,7 @@ php bin/console doctrine:migrations:migrate
 - `column_prop` - Column formatting preferences
 - `messenger_messages` - Async messaging
 
-### 7. Set Permissions
+### 8. Set Permissions
 
 Ensure writable directories have correct permissions:
 
@@ -212,7 +231,7 @@ Ensure writable directories have correct permissions:
 chmod -R 775 var/
 ```
 
-### 8. Clear Cache
+### 9. Clear Cache
 
 ```bash
 php bin/console cache:clear

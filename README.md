@@ -138,18 +138,24 @@ cd querro
 composer install
 npm install
 
-# 2. Setup database
+# 2. Install phpGrid dependencies
+cd includes/phpGrid
+composer install --ignore-platform-req=ext-gd
+npm install
+cd ../..
+
+# 3. Setup database
 mysql -u root -p -e "CREATE DATABASE querro CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 mysql -u root -p querro < install.sql
 
-# 3. Configure
+# 4. Configure
 cp .env .env.local
 # Edit .env.local with your database credentials
 
-# 4. Clear cache
+# 5. Clear cache
 php bin/console cache:clear
 
-# 5. Access application
+# 6. Access application
 # Navigate to http://localhost/querro (or your configured APP_URL)
 ```
 
