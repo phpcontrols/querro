@@ -6,11 +6,11 @@
 
 // APP DATABASE - Load from .env file
 // All database configuration is now in .env for easier environment management
-define('APP_DBHOST', getenv('DB_HOST') ?: 'localhost');
-define('APP_DBUSER', getenv('DB_USER') ?: 'root');
-define('APP_DBPASS', getenv('DB_PASS') ?: 'root');
-define('APP_DBNAME', getenv('DB_NAME') ?: 'querro');
-define('APP_URL', getenv('APP_URL') ?: 'https://app.querro.local');
+define('APP_DBHOST', $_ENV['DB_HOST'] ?? 'localhost');
+define('APP_DBUSER', $_ENV['DB_USER'] ?? 'root');
+define('APP_DBPASS', $_ENV['DB_PASS'] ?? 'root');
+define('APP_DBNAME', $_ENV['DB_NAME'] ?? 'querro');
+define('APP_URL',    $_ENV['APP_URL'] ?? 'https://app.querro.local');
 
 
 

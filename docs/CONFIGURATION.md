@@ -66,11 +66,11 @@ The central configuration file that defines application constants.
 <?php
 
 // Database Configuration (loaded from .env)
-define('APP_DBHOST', getenv('DB_HOST') ?: 'localhost');
-define('APP_DBUSER', getenv('DB_USER') ?: 'root');
-define('APP_DBPASS', getenv('DB_PASS') ?: 'your_database_password');
-define('APP_DBNAME', getenv('DB_NAME') ?: 'querro');
-define('APP_URL', getenv('APP_URL') ?: 'https://app.querro.local');
+define('APP_DBHOST', $_ENV['DB_HOST'] ?? 'localhost');
+define('APP_DBUSER', $_ENV['DB_USER'] ?? 'root');
+define('APP_DBPASS', $_ENV['DB_PASS'] ?? 'your_database_password');
+define('APP_DBNAME', $_ENV['DB_NAME'] ?? 'querro');
+define('APP_URL',    $_ENV['APP_URL'] ?? 'https://app.querro.local');
 ```
 
 ## Database Configuration
