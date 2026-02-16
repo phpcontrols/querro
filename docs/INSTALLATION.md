@@ -27,6 +27,11 @@ Querro runs on a standard PHP stack:
 git clone [repository-url] querro
 cd querro
 
+# Environment variables
+cp .env.local.example .env
+
+# Edit .env with your database credentials
+
 # Install dependencies
 composer install
 npm install
@@ -35,11 +40,9 @@ npm install
 cd includes/phpGrid
 composer install --ignore-platform-req=ext-gd
 npm install
-cd ../..
 
-# Configure environment
-cp .env .env.local
-# Edit .env.local with your database credentials
+# Go back to root folder
+cd ../..
 
 # Setup database (creates all tables automatically)
 mysql -u root -p -e "CREATE DATABASE querro CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
