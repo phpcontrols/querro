@@ -10,7 +10,7 @@ define('APP_DBHOST', getenv('DB_HOST') ?: 'localhost');
 define('APP_DBUSER', getenv('DB_USER') ?: 'root');
 define('APP_DBPASS', getenv('DB_PASS') ?: 'root');
 define('APP_DBNAME', getenv('DB_NAME') ?: 'querro');
-define('APP_URL', getenv('APP_URL') ?: 'https://app.querro-dev.local');
+define('APP_URL', getenv('APP_URL') ?: 'https://app.querro.local');
 
 
 
