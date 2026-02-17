@@ -5,7 +5,7 @@
 
 {% block body %}
     {% if error %}
-        <div>{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+        <div style="color: #c0392b; background: #fdf2f2; border: 1px solid #f5c6cb; border-radius: 4px; padding: 10px 14px; margin-bottom: 10px; font-size: 14px;">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
     {% endif %}
     
     <div style="text-align: left; padding-top:15px; font-weight: 600;">
