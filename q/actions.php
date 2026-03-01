@@ -489,6 +489,32 @@ function ai_saveSettings()
             throw new Exception('Invalid API key format');
         }
 
+        // Validate API key by calling OpenAI API
+        $ch = curl_init('https://api.openai.com/v1/models');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => [
+                'Authorization: Bearer ' . $apiKey,
+            ],
+            CURLOPT_TIMEOUT => 10,
+        ]);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+
+        if ($curlError) {
+            throw new Exception('Could not connect to OpenAI to validate API key: ' . $curlError);
+        }
+        if ($httpCode === 401) {
+            throw new Exception('Invalid API key. Please check your OpenAI API key and try again.');
+        }
+        if ($httpCode !== 200) {
+            $body = json_decode($response, true);
+            $msg = $body['error']['message'] ?? 'Unexpected response (HTTP ' . $httpCode . ')';
+            throw new Exception('OpenAI API error: ' . $msg);
+        }
+
         // Encrypt API key
         $encryptedKey = encryptApiKey($apiKey);
 
