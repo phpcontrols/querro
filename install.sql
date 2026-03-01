@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS `messenger_messages` (
 -- Create ai_settings table (AI/OpenAI configuration per account)
 CREATE TABLE IF NOT EXISTS `ai_settings` (
   `account_id` INT NOT NULL,
-  `openai_api_key` VARCHAR(255) DEFAULT NULL,
+  `openai_api_key` TEXT DEFAULT NULL,
   `openai_model` VARCHAR(255) DEFAULT NULL,
   `active` TINYINT(1) NOT NULL DEFAULT 1,
   PRIMARY KEY(`account_id`)
