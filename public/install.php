@@ -824,6 +824,11 @@ $detectedUrl = detectAppUrl();
                 <strong>Security:</strong> Delete <code>install.php</code> from your server before going to login.
             </div>
 
+            <div class="alert alert-warning" style="font-size:13px;">
+                <strong>Getting a 404 Not Found?</strong> Make sure your Apache VirtualHost is configured correctly
+                with <code>DocumentRoot</code> pointing to the <code>public/</code> directory and <code>AllowOverride All</code> enabled.
+            </div>
+
             <div class="btn-row">
                 <form method="post" action="" style="flex:1;">
                     <input type="hidden" name="delete_installer" value="1">
