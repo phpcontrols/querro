@@ -652,6 +652,10 @@ $detectedUrl = detectAppUrl();
                     <td><?= htmlspecialchars($req['label']) ?></td>
                     <td class="<?= $req['ok'] ? 'status-ok' : 'status-fail' ?>">
                         <?= htmlspecialchars($req['value']) ?>
+                        <?php if (!$req['ok']): ?>
+                            <a href="https://www.google.com/search?q=<?= urlencode('How to fix ' . $req['label'] . ' ' . $req['value'] . ' PHP') ?>"
+                               target="_blank" style="font-size:12px; margin-left:6px; color:#337ab7;">how to fix?</a>
+                        <?php endif; ?>
                     </td>
                 </tr>
             <?php endforeach; ?>
