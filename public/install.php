@@ -45,6 +45,12 @@ if (file_exists(PROJECT_ROOT . '/.env')) {
     rename(PROJECT_ROOT . '/.env', PROJECT_ROOT . '/.env-' . $timestamp);
 }
 
+// Show phpinfo if requested
+if (isset($_GET['phpinfo'])) {
+    phpinfo();
+    exit;
+}
+
 // Handle self-delete request
 if (isset($_POST['delete_installer'])) {
     @unlink(__FILE__);
@@ -669,6 +675,10 @@ $detectedUrl = detectAppUrl();
                 </tr>
             <?php endforeach; ?>
             </table>
+
+            <p style="text-align:right; margin-top:12px;">
+                <a href="?phpinfo=1" target="_blank" style="font-size:12px; color:#337ab7;">View full phpinfo()</a>
+            </p>
 
             <?php if ($allPassed): ?>
                 <a href="?step=2" class="btn btn-primary btn-block">Continue</a>
