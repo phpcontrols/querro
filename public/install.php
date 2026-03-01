@@ -45,6 +45,15 @@ if (file_exists(PROJECT_ROOT . '/.env')) {
     rename(PROJECT_ROOT . '/.env', PROJECT_ROOT . '/.env-' . $timestamp);
 }
 
+// Handle self-delete request
+if (isset($_POST['delete_installer'])) {
+    @unlink(__FILE__);
+    if (!file_exists(__FILE__)) {
+        header('Location: /login');
+        exit;
+    }
+}
+
 // Current step
 $step = isset($_GET['step']) ? (int)$_GET['step'] : 1;
 $error = '';
@@ -771,10 +780,19 @@ $detectedUrl = detectAppUrl();
             </div>
 
             <div class="alert alert-warning">
-                <strong>Security:</strong> Please delete <code>public/install.php</code> from your server now.
+                <strong>Security:</strong> Delete <code>install.php</code> from your server before going to login.
             </div>
 
-            <a href="/login" class="btn btn-primary btn-block">Go to Login</a>
+            <div class="btn-row">
+                <form method="post" action="" style="flex:1;">
+                    <input type="hidden" name="delete_installer" value="1">
+                    <button type="submit" class="btn btn-success btn-block" style="margin-top:0;"
+                            onclick="return confirm('This will permanently delete install.php and redirect you to the login page.');">
+                        Delete install.php &amp; Go to Login
+                    </button>
+                </form>
+                <a href="/login" class="btn btn-outline" style="display:flex;align-items:center;justify-content:center;">Skip to Login</a>
+            </div>
 
             <?php
             unset($_SESSION['install_db'], $_SESSION['install_app'], $_SESSION['install_admin']);
