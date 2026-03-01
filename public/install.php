@@ -39,26 +39,10 @@ set_error_handler(function ($severity, $message, $file, $line) use (&$phpWarning
 
 session_start();
 
-// Check if already installed: .env exists with a working DB connection
-if (file_exists(PROJECT_ROOT . '/.env') && !isset($_GET['force'])) {
-    $envContent = file_get_contents(PROJECT_ROOT . '/.env');
-    $env = [];
-    foreach (explode("\n", $envContent) as $line) {
-        $line = trim($line);
-        if ($line === '' || $line[0] === '#') continue;
-        if (strpos($line, '=') !== false) {
-            [$key, $value] = explode('=', $line, 2);
-            $env[trim($key)] = trim($value);
-        }
-    }
-    if (!empty($env['DB_HOST']) && !empty($env['DB_USER']) && !empty($env['DB_NAME'])) {
-        $testConn = @mysqli_connect($env['DB_HOST'], $env['DB_USER'], $env['DB_PASS'] ?? '', $env['DB_NAME']);
-        if ($testConn) {
-            mysqli_close($testConn);
-            header('Location: /login');
-            exit;
-        }
-    }
+// If .env already exists, back it up with a timestamp and continue fresh install
+if (file_exists(PROJECT_ROOT . '/.env')) {
+    $timestamp = date('Ymd-His');
+    rename(PROJECT_ROOT . '/.env', PROJECT_ROOT . '/.env-' . $timestamp);
 }
 
 // Current step
