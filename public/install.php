@@ -168,6 +168,37 @@ try {
                         }
                         $step = 3;
                     } else {
+                        // Install sample database for users to explore
+                        $sampleSqlFile = PROJECT_ROOT . '/public/sampledb.sql';
+                        if (file_exists($sampleSqlFile)) {
+                            // Create sampledb database
+                            if (mysqli_query($conn, "CREATE DATABASE IF NOT EXISTS `sampledb` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")) {
+                                mysqli_select_db($conn, 'sampledb');
+                                $sampleSql = file_get_contents($sampleSqlFile);
+                                $sampleSql = preg_replace('/^--.*$/m', '', $sampleSql);
+
+                                if (mysqli_multi_query($conn, $sampleSql)) {
+                                    do {
+                                        if ($result = mysqli_store_result($conn)) {
+                                            mysqli_free_result($result);
+                                        }
+                                    } while (mysqli_next_result($conn));
+                                }
+
+                                // Create a read-only MySQL user for sampledb
+                                $sampleHost = mysqli_real_escape_string($conn, $db['host']);
+                                $roHost = ($db['host'] === 'localhost' || $db['host'] === '127.0.0.1') ? 'localhost' : '%';
+                                mysqli_query($conn, "CREATE USER IF NOT EXISTS 'readonly'@'{$roHost}' IDENTIFIED BY 'P@ssw0rd123'");
+                                mysqli_query($conn, "GRANT SELECT ON `sampledb`.* TO 'readonly'@'{$roHost}'");
+                                mysqli_query($conn, "FLUSH PRIVILEGES");
+
+                                // Register sampledb as a database connection in the dbs table using readonly user
+                                mysqli_select_db($conn, $db['name']);
+                                mysqli_query($conn, "INSERT INTO `dbs` (`account_id`, `name`, `label`, `server`, `username`, `password`, `port`, `type`, `encoding`, `active`)
+                                    VALUES (1, 'sampledb', 'Sample Database', '{$sampleHost}', 'readonly', 'P@ssw0rd123', '3306', 'mysql', 'utf8mb4', 1)");
+                            }
+                        }
+
                         $step = 4;
                     }
                 }
