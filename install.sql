@@ -101,6 +101,42 @@ CREATE TABLE IF NOT EXISTS `messenger_messages` (
   PRIMARY KEY(`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE=InnoDB;
 
+-- Create ai_settings table (AI/OpenAI configuration per account)
+CREATE TABLE IF NOT EXISTS `ai_settings` (
+  `account_id` INT NOT NULL,
+  `openai_api_key` VARCHAR(255) DEFAULT NULL,
+  `openai_model` VARCHAR(255) DEFAULT NULL,
+  `active` TINYINT(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY(`account_id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE=InnoDB;
+
+-- Create ai_query_log table (audit log for AI-generated SQL queries)
+CREATE TABLE IF NOT EXISTS `ai_query_log` (
+  `id` INT AUTO_INCREMENT NOT NULL,
+  `account_id` INT NOT NULL,
+  `user_id` INT NOT NULL,
+  `database_id` VARCHAR(255) DEFAULT NULL,
+  `natural_language_input` LONGTEXT DEFAULT NULL,
+  `generated_sql` LONGTEXT DEFAULT NULL,
+  `model_used` VARCHAR(255) DEFAULT NULL,
+  `tokens_used` INT DEFAULT NULL,
+  `execution_time_ms` INT DEFAULT NULL,
+  `success` TINYINT(1) DEFAULT NULL,
+  `error_message` LONGTEXT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX `idx_ai_query_log_account` (`account_id`),
+  INDEX `idx_ai_query_log_created` (`created_at`),
+  PRIMARY KEY(`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE=InnoDB;
+
+-- Create doctrine_migration_versions table (Doctrine migrations tracking)
+CREATE TABLE IF NOT EXISTS `doctrine_migration_versions` (
+  `version` VARCHAR(191) NOT NULL,
+  `executed_at` DATETIME DEFAULT NULL,
+  `execution_time` INT DEFAULT NULL,
+  PRIMARY KEY(`version`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE=InnoDB;
+
 -- Performance Indexes (from LOGIN_PERFORMANCE_OPTIMIZATIONS.md)
 -- Note: user.email already has UNIQUE index from table creation
 CREATE INDEX `idx_dbs_account_id` ON `dbs` (`account_id`);
