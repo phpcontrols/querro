@@ -17,6 +17,9 @@ include_once('../includes/load.php');
     <!-- Bootstrap -->
     <link rel="stylesheet" href="/node_modules/bootstrap/dist/css/bootstrap.min.css">
 
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="/node_modules/@fortawesome/fontawesome-free/css/all.css">
+
     <!-- Web Icons -->
 	<link rel="stylesheet" href="/resources/css/web-icons.css">
 

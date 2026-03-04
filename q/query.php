@@ -39,6 +39,9 @@ $shared = ($_POST['shared']) ?? false;
     <!-- Bootstrap Select -->
     <link rel="stylesheet" href="/node_modules/bootstrap-select/dist/css/bootstrap-select.min.css">
 
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="/node_modules/@fortawesome/fontawesome-free/css/all.css">
+
     <!-- Web Icons -->
     <link rel="stylesheet" href="/resources/css/web-icons.css">
 

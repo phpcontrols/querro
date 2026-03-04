@@ -16,6 +16,7 @@
         <ul class="nav navbar-nav">
             <li<?php if (strpos($current_page, 'query') === 0) echo ' class="active"'; ?>><a href="/q/query.php">Query</a></li>
             <li<?php if (strpos($current_page, 'settings') === 0) echo ' class="active"'; ?>><a href="/q/settings.php">Settings</a></li>
+            <li><a href="https://github.com/phpcontrols/querro/" target="_blank"><i class="fa-brands fa-github" style="font-size:16px;"></i></a></li>
         </ul>
         <ul class="nav navbar-nav navbar-right">
           <li style="float:right;display:block"><a href="/logout">Logout</a></li>
