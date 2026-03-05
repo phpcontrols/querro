@@ -2,6 +2,8 @@
 
 Website: [https://querro.io](querro.io)
 
+Demo: [https://app.querro.io](app.querro.io) (login: admin@example.com | password: admin)
+
 A web-based internal database management tool that allows users to connect and query databases using AI text-to-sql. Querro takes a pragmatic approach to web development, using proven server-side technologies to deliver reliable database management without unnecessary complexity.
 
 ## Core Features
