@@ -2,6 +2,62 @@
 
 Complete instructions for installing and configuring Querro.
 
+## Method 1: Web Installer (Recommended)
+
+The web installer is the easiest way to set up Querro. No command-line tools needed beyond a web server with PHP and MySQL.
+
+### What you need before starting
+
+- A web server running **Apache** with PHP 8.1+ and MySQL/MariaDB
+- A MySQL user with CREATE DATABASE privileges (or an empty database already created)
+
+### Steps
+
+**1. Download the release**
+
+Download the latest `querro-free-vX.X.zip` from the [Releases](https://github.com/querro/querro-free/releases) page.
+
+**2. Extract to your web server**
+
+Extract the zip into your web root, for example:
+
+```
+/var/www/querro/
+```
+
+Make sure the directory is served by Apache and that the web server user can write to the project root (needed to create `.env`).
+
+**3. Open the installer in your browser**
+
+Navigate to:
+
+```
+http://your-server/install.php
+```
+
+**4. Follow the 6-step wizard**
+
+| Step | What it does |
+|------|-------------|
+| 1. Requirements Check | Verifies PHP version, required extensions, and file permissions |
+| 2. Database Configuration | Enter your MySQL host, username, password, and database name |
+| 3. Database Setup | Creates the database and imports all tables from `install.sql` |
+| 4. Application Configuration | Set your app URL and environment (production or development) |
+| 5. Admin Account | Create your administrator login |
+| 6. Complete | Installation done — delete `install.php` for security |
+
+**5. Delete the installer**
+
+After completing step 6, click **"Delete install.php & Go to Login"**, or manually delete `public/install.php` from your server.
+
+> **Security:** Leaving `install.php` accessible after installation is a security risk. Always delete it.
+
+---
+
+## Method 2: Manual Installation
+
+For developers installing from source or who prefer full control over each step.
+
 ## Prerequisites
 
 ### Runtime Requirements
@@ -20,7 +76,7 @@ Querro runs on a standard PHP stack:
 
 **Note**: Node.js is **NOT required** to run the application. It's only needed during initial setup to install frontend libraries via `npm install`. Once installed, the app runs entirely on PHP + Apache + MySQL.
 
-## Quick Start
+### Quick Start
 
 ```bash
 # Clone repository
@@ -57,7 +113,7 @@ php bin/console cache:clear
 # Start development server or configure Apache virtual host
 ```
 
-## System Requirements
+### System Requirements
 
 ### PHP Requirements
 
@@ -102,7 +158,7 @@ sudo systemctl restart apache2
 
 **Important**: After running `npm install` during setup, Node.js is not required to run the application. The installed frontend libraries become static files served by Apache.
 
-## Installation Steps
+### Installation Steps
 
 ### 1. Clone Repository
 
@@ -240,7 +296,7 @@ chmod -R 775 var/
 php bin/console cache:clear
 ```
 
-## Configuration
+### Configuration
 
 ### Environment Variables
 
@@ -262,7 +318,7 @@ Querro uses environment variables defined in `.env` and `.env.local`:
 
 **`config/databases.php`** - Manages database connections with session-based caching for performance.
 
-## Web Server Configuration
+### Web Server Configuration
 
 ### Apache Setup
 
@@ -304,7 +360,7 @@ RewriteRule (.+) public/$1 [L]
 RewriteRule (.*) public/index.php?route=$1 [L,QSA]
 ```
 
-## Post-Installation
+### Post-Installation
 
 ### 1. Create Admin User
 
