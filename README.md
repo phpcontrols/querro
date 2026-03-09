@@ -133,37 +133,41 @@ Comprehensive guides for using and developing Querro:
 - **[Architecture Overview](README.md#architecture)** - System design
 - **[FAQ](docs/FAQ.md)** - Frequently asked questions
 
-## Quick Start
+## Installation
+
+### Web Installer (Recommended)
+
+The easiest way to get started — no command line required.
+
+1. **Download** the latest release zip from the [Releases](https://github.com/phpcontrols/querro/releases) page
+2. **Extract** the zip into your web server's document root (e.g. `/var/www/querro`)
+3. **Open** `http://your-server/install.php` in your browser
+4. **Follow** the 6-step wizard:
+   - Requirements check
+   - Database credentials
+   - Database setup (imports schema automatically)
+   - Application URL and environment
+   - Create your admin account
+   - Done — delete `install.php` when prompted
+
+That's it. The installer writes your `.env`, creates the database, and sets up your admin user.
+
+> **Note:** Delete `install.php` from your server after installation for security.
+
+### Manual Install (Advanced)
+
+For developers who prefer the command line or want to install from source, see the [Installation Guide](docs/INSTALLATION.md).
 
 ```bash
-# 1. Clone and install
-git clone [repository-url] querro
-cd querro
-composer install
-npm install
-
-# 2. Install phpGrid dependencies
-cd includes/phpGrid
-composer install --ignore-platform-req=ext-gd
-npm install
-cd ../..
-
-# 3. Setup database
+# Quick reference
+git clone [repository-url] querro && cd querro
+composer install && npm install
+cd includes/phpGrid && composer install --ignore-platform-req=ext-gd && npm install && cd ../..
 mysql -u root -p -e "CREATE DATABASE querro CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 mysql -u root -p querro < install.sql
-
-# 4. Configure
-cp .env .env.local
-# Edit .env.local with your database credentials
-
-# 5. Clear cache
+cp .env .env.local  # edit with your credentials
 php bin/console cache:clear
-
-# 6. Access application
-# Navigate to http://localhost/querro (or your configured APP_URL)
 ```
-
-See [Installation Guide](docs/INSTALLATION.md) for detailed instructions.
 
 ## License
 
