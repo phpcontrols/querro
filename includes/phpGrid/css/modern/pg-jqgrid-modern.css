@@ -1,0 +1,784 @@
+/*
+ * phpGrid "modern" theme
+ * ---------------------------------------------------------------------------
+ * Framework-free: needs no Bootstrap and no jQuery UI theme (only jQuery UI's
+ * structural CSS), and every rule is scoped to the grid, its dialogs or the
+ * "modern" jqGrid guiStyle classes (pg-*, see js/grid.guistyles.js), so it
+ * works on Tailwind, Material, any Bootstrap version or plain pages without
+ * touching them. Select it with:
+ *
+ *     define('THEME', 'modern');          // conf.php, every grid
+ *     $dg->set_theme('modern');           // or per grid
+ *
+ * Re-skin by overriding the --pg-* tokens, e.g.
+ *
+ *     .ui-jqgrid, .ui-jqdialog { --pg-accent: #0f766e; --pg-radius: 6px; }
+ *
+ * Dark mode is opt-in: put data-bs-theme="dark" (Bootstrap 5.3 convention)
+ * or class="pg-theme-dark" on <html>, <body> or any ancestor of the grid.
+ */
+
+/* ---------- tokens ---------- */
+.ui-jqgrid,
+.ui-jqdialog,
+.jqmOverlay {
+  --pg-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --pg-text-sm: 13px;
+  --pg-text-base: 13.5px;
+  --pg-text-lg: 16px;
+
+  --pg-surface: #ffffff;
+  --pg-surface-muted: #f8fafc;
+  --pg-surface-sunken: #f1f5f9;
+  /* caption, header row and pager: tinted so the grid stands out on a white page */
+  --pg-chrome: #f1f5f9;
+  --pg-chrome-hover: #e2e8f0;
+  --pg-border: #dbe2ea;
+  --pg-border-strong: #cbd5e1;
+  --pg-text: #0f172a;
+  --pg-text-muted: #64748b;
+  --pg-accent: #4f46e5;
+  --pg-accent-hover: #4338ca;
+  --pg-accent-soft: #eef2ff;
+  --pg-accent-ring: rgb(79 70 229 / 28%);
+  --pg-on-accent: #ffffff;
+  --pg-danger: #dc2626;
+  --pg-row-hover: #f8fafc;
+  --pg-overlay: rgb(15 23 42 / 45%);
+
+  --pg-radius: 12px;
+  --pg-radius-control: 8px;
+  --pg-row-height: 44px;
+  /* jqGrid auto-sizes columns to content plus ~15px, so wider padding truncates every cell */
+  --pg-cell-pad-x: 7px;
+  --pg-header-height: 40px;
+  --pg-shadow: 0 1px 3px rgb(15 23 42 / 8%), 0 10px 28px -14px rgb(15 23 42 / 18%);
+  --pg-shadow-dialog: 0 24px 48px -12px rgb(15 23 42 / 28%), 0 0 0 1px rgb(15 23 42 / 6%);
+
+  --pg-duration: 140ms;
+  --pg-ease: cubic-bezier(0.2, 0, 0, 1);
+
+  /* native checkboxes, selects and scrollbars follow the theme */
+  color-scheme: light;
+}
+
+[data-bs-theme="dark"] .ui-jqgrid,
+[data-bs-theme="dark"] .ui-jqdialog,
+[data-bs-theme="dark"] .jqmOverlay,
+.pg-theme-dark .ui-jqgrid,
+.pg-theme-dark .ui-jqdialog,
+.pg-theme-dark .jqmOverlay {
+  --pg-surface: #0f172a;
+  --pg-surface-muted: #131c31;
+  --pg-surface-sunken: #1e293b;
+  --pg-chrome: #172036;
+  --pg-chrome-hover: #243049;
+  --pg-border: #243049;
+  --pg-border-strong: #334155;
+  --pg-text: #e2e8f0;
+  --pg-text-muted: #94a3b8;
+  --pg-accent: #818cf8;
+  --pg-accent-hover: #a5b4fc;
+  --pg-accent-soft: rgb(129 140 248 / 14%);
+  --pg-accent-ring: rgb(129 140 248 / 35%);
+  --pg-on-accent: #0f172a;
+  --pg-danger: #f87171;
+  --pg-row-hover: #131c31;
+  --pg-overlay: rgb(2 6 23 / 65%);
+  color-scheme: dark;
+  --pg-shadow: 0 0 0 1px rgb(255 255 255 / 4%), 0 8px 24px -12px rgb(0 0 0 / 60%);
+  --pg-shadow-dialog: 0 24px 48px -12px rgb(0 0 0 / 70%), 0 0 0 1px rgb(255 255 255 / 8%);
+}
+
+/* ---------- grid container ---------- */
+.ui-jqgrid {
+  overflow: hidden;
+  border: 1px solid var(--pg-border) !important;
+  border-radius: var(--pg-radius) !important;
+  background: var(--pg-surface) !important;
+  box-shadow: var(--pg-shadow);
+  color: var(--pg-text);
+  font-family: var(--pg-font) !important;
+  font-size: var(--pg-text-base);
+  font-variant-numeric: tabular-nums;
+}
+.ui-jqgrid *:not(.fa):not([class*="fa-"]):not(.ui-icon),
+.ui-jqgrid .ui-jqgrid-htable th div,
+.ui-jqgrid tr.jqgrow td {
+  font-family: var(--pg-font) !important;
+}
+.ui-jqgrid .ui-jqgrid-view,
+.ui-jqgrid .ui-jqgrid-hdiv,
+.ui-jqgrid .ui-jqgrid-bdiv,
+.ui-jqgrid .ui-widget-content {
+  border: 0 !important;
+  background: var(--pg-surface) !important;
+  color: var(--pg-text);
+}
+
+/* caption */
+.ui-jqgrid .ui-jqgrid-titlebar {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  padding: 0 16px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--pg-border) !important;
+  background: var(--pg-chrome) !important;
+  color: var(--pg-text) !important;
+}
+.ui-jqgrid .ui-jqgrid-caption .ui-jqgrid-title {
+  margin: 0;
+  font-size: var(--pg-text-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.ui-jqgrid .ui-jqgrid-titlebar-close {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-top: -14px !important;
+  border-radius: var(--pg-radius-control);
+  color: var(--pg-text-muted) !important;
+  transition: background-color var(--pg-duration) var(--pg-ease);
+}
+.ui-jqgrid .ui-jqgrid-titlebar-close:hover {
+  background: var(--pg-chrome-hover);
+  color: var(--pg-text) !important;
+}
+
+/* ---------- header row ---------- */
+.ui-jqgrid .ui-jqgrid-hdiv,
+.ui-jqgrid .ui-jqgrid-hbox,
+.ui-jqgrid .ui-jqgrid-htable {
+  background: var(--pg-chrome) !important;
+}
+.ui-jqgrid .ui-jqgrid-hdiv {
+  border-bottom: 1px solid var(--pg-border) !important;
+}
+.ui-jqgrid .ui-jqgrid-htable {
+  border: 0 !important;
+}
+.ui-jqgrid .ui-jqgrid-labels th.ui-th-column,
+.ui-jqgrid .ui-jqgrid-htable th {
+  height: var(--pg-header-height);
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  vertical-align: middle;
+}
+.ui-jqgrid .ui-jqgrid-htable th div,
+.ui-jqgrid .ui-jqgrid-labels th.ui-th-column span.ui-jqgrid-cell-wrapper {
+  color: var(--pg-text-muted) !important;
+  font-size: 12px !important;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-shadow: none !important;
+  text-transform: uppercase;
+}
+.ui-jqgrid .ui-jqgrid-htable th div.ui-jqgrid-sortable,
+.ui-jqgrid .ui-jqgrid-htable th > div[role="columnheader"] {
+  height: auto !important;
+  padding: 0 var(--pg-cell-pad-x);
+  text-align: left;
+}
+.ui-jqgrid .ui-jqgrid-labels th.ui-th-column:hover span.ui-jqgrid-cell-wrapper {
+  color: var(--pg-text) !important;
+}
+/* column resize grip: a hairline that shows on hover */
+.ui-jqgrid .ui-jqgrid-resize {
+  background: linear-gradient(var(--pg-border-strong), var(--pg-border-strong)) center / 1px 50% no-repeat;
+  opacity: 0;
+  transition: opacity var(--pg-duration) var(--pg-ease);
+}
+.ui-jqgrid .ui-jqgrid-labels:hover .ui-jqgrid-resize {
+  opacity: 1;
+}
+.ui-jqgrid .s-ico {
+  color: var(--pg-text-muted);
+}
+.ui-jqgrid .s-ico .ui-grid-ico-sort:not(.ui-state-disabled):not(.disabled) {
+  color: var(--pg-accent) !important;
+}
+
+/* toolbar search row */
+.ui-jqgrid tr.ui-search-toolbar th {
+  padding: 6px 8px !important;
+  border: 0 !important;
+  border-top: 1px solid var(--pg-border) !important;
+  background: var(--pg-surface) !important;
+}
+
+/* toolbar search "clear" links */
+.ui-jqgrid .ui-search-clear a,
+.ui-jqgrid .clearsearchclass {
+  color: var(--pg-text-muted) !important;
+  text-decoration: none;
+}
+.ui-jqgrid .ui-search-clear a:hover,
+.ui-jqgrid .clearsearchclass:hover {
+  color: var(--pg-danger) !important;
+}
+
+/* ---------- body rows ---------- */
+.ui-jqgrid .ui-jqgrid-btable {
+  border-collapse: separate;
+}
+.ui-jqgrid tr.jqgrow,
+.ui-jqgrid tr.jqgrow:nth-child(odd),
+.ui-jqgrid tr.jqgrow:nth-child(even) {
+  background: var(--pg-surface) !important;
+  background-image: none !important;
+  color: var(--pg-text) !important;
+  transition: background-color var(--pg-duration) var(--pg-ease);
+}
+.ui-jqgrid tr.jqgrow td,
+.ui-jqgrid .ui-jqgrid-bdiv tr.ui-row-ltr:not(.jqgfirstrow) > td:not(.subgrid-data):not(.sgexpanded):not(.sgcollapsed) {
+  height: var(--pg-row-height);
+  padding: 0 var(--pg-cell-pad-x) !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--pg-border) !important;
+  background: transparent !important;
+  color: inherit;
+  font-size: var(--pg-text-base) !important;
+  line-height: 1.4;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* jqGrid's altRows class (ui-priority-secondary) fades every other row; zebra is not part of this theme */
+.ui-jqgrid tr.jqgrow.ui-priority-secondary {
+  opacity: 1 !important;
+  font-weight: inherit !important;
+}
+.ui-jqgrid tr.jqgrow:last-child td {
+  border-bottom-color: transparent !important;
+}
+.ui-jqgrid tr.jqgrow:hover {
+  background: var(--pg-row-hover) !important;
+}
+.ui-jqgrid tr.jqgrow[aria-selected="true"],
+.ui-jqgrid tr.jqgrow.pg-selected {
+  background: var(--pg-accent-soft) !important;
+}
+.ui-jqgrid tr.jqgrow[aria-selected="true"] td:first-child {
+  box-shadow: inset 2px 0 0 var(--pg-accent);
+}
+
+/* links inside cells (formatter "link"/"showlink", custom HTML) */
+.ui-jqgrid tr.jqgrow td a {
+  color: var(--pg-accent);
+  text-decoration: none;
+}
+.ui-jqgrid tr.jqgrow td a:hover {
+  color: var(--pg-accent-hover);
+  text-decoration: underline;
+}
+
+/* checkbox column */
+.ui-jqgrid input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--pg-accent);
+  cursor: pointer;
+  vertical-align: middle;
+}
+.ui-jqgrid .jqgrow > td.td_cbox,
+.ui-jqgrid .ui-jqgrid-bdiv tr.ui-row-ltr:not(.jqgfirstrow) > td.td_cbox:not(.subgrid-data):not(.sgexpanded):not(.sgcollapsed),
+.ui-jqgrid .ui-th-column.jqgh_cbox,
+.ui-jqgrid .ui-jqgrid-htable th.jqgh_cbox div {
+  padding: 0 !important;
+  overflow: visible;
+  text-align: center;
+}
+
+/* cell editing (overrides the inline outline phpGrid emits for cell edit mode) */
+.ui-jqgrid tr.jqgrow td.edit-cell {
+  outline: 0 !important;
+  box-shadow: inset 0 0 0 2px var(--pg-accent) !important;
+  background: var(--pg-surface) !important;
+}
+.ui-jqgrid tr.jqgrow td input,
+.ui-jqgrid tr.jqgrow td select,
+.ui-jqgrid tr.jqgrow td textarea {
+  left: 0 !important;
+  top: 0 !important;
+  min-height: 0 !important;
+  border: 1px solid var(--pg-border-strong) !important;
+  border-radius: 6px;
+  background: var(--pg-surface) !important;
+  color: var(--pg-text);
+  font: inherit;
+}
+
+/* grouping, footer, subgrid */
+.ui-jqgrid tr.jqgroup td {
+  background: var(--pg-surface-muted) !important;
+  color: var(--pg-text);
+  font-weight: 600;
+}
+.ui-jqgrid tr.footrow td,
+.ui-jqgrid tr.jqfoot td {
+  border-top: 1px solid var(--pg-border) !important;
+  background: var(--pg-surface-muted) !important;
+  font-weight: 600;
+}
+.ui-jqgrid .ui-subgrid td.subgrid-data {
+  background: var(--pg-surface-muted) !important;
+}
+
+/* loading pill */
+.ui-jqgrid .loading,
+.ui-jqgrid .ui-jqgrid-loading {
+  padding: 8px 14px !important;
+  border: 1px solid var(--pg-border) !important;
+  border-radius: 999px !important;
+  background: var(--pg-surface) !important;
+  box-shadow: var(--pg-shadow);
+  color: var(--pg-text-muted) !important;
+  font-size: var(--pg-text-sm);
+}
+
+/* ---------- pager (bottom, and the toppager:true copy above the header) ---------- */
+.ui-jqgrid :is(.ui-jqgrid-pager, .ui-jqgrid-toppager) {
+  height: auto !important;
+  min-height: 52px;
+  padding: 8px 12px !important;
+  border: 0 !important;
+  border-top: 1px solid var(--pg-border) !important;
+  background: var(--pg-chrome) !important;
+  color: var(--pg-text-muted);
+  font-size: var(--pg-text-sm) !important;
+}
+.ui-jqgrid :is(.ui-jqgrid-pager, .ui-jqgrid-toppager) .ui-pager-control,
+.ui-jqgrid :is(.ui-jqgrid-pager, .ui-jqgrid-toppager) .ui-pg-table {
+  height: 36px;
+}
+.ui-jqgrid .ui-pg-table td {
+  font-size: var(--pg-text-sm) !important;
+}
+/* jqGrid's inline table-layout:fixed splits the space beside the paging controls evenly,
+   so a long button row overflows into them; auto lets the button cell take what it needs */
+.ui-jqgrid :is(.ui-jqgrid-pager, .ui-jqgrid-toppager) .ui-pager-control > .ui-pg-table {
+  table-layout: auto !important;
+}
+/* one non-wrapping row of fixed-size buttons: as inline boxes they wrap, and as table
+   cells they shrink when the nav cell is narrow */
+.ui-jqgrid :is(.ui-jqgrid-pager, .ui-jqgrid-toppager) .navtable {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+}
+.ui-jqgrid :is(.ui-jqgrid-pager, .ui-jqgrid-toppager) .navtable > .ui-pg-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.ui-jqgrid :is(.ui-jqgrid-pager, .ui-jqgrid-toppager) .ui-pg-button {
+  display: table-cell;
+  flex: 0 0 auto;
+  vertical-align: middle;
+  text-align: center;
+  width: 28px;
+  height: 28px;
+  border: 0 !important;
+  border-radius: var(--pg-radius-control) !important;
+  background: transparent !important;
+  color: var(--pg-text-muted) !important;
+  cursor: pointer;
+  transition: background-color var(--pg-duration) var(--pg-ease), color var(--pg-duration) var(--pg-ease);
+}
+.ui-jqgrid :is(.ui-jqgrid-pager, .ui-jqgrid-toppager) .ui-pg-button .fa,
+.ui-jqgrid :is(.ui-jqgrid-pager, .ui-jqgrid-toppager) .ui-pg-button .ui-icon {
+  color: inherit !important;
+  font-size: 14px;
+}
+.ui-jqgrid :is(.ui-jqgrid-pager, .ui-jqgrid-toppager) .ui-pg-button:not(.ui-state-disabled):hover {
+  background: var(--pg-chrome-hover) !important;
+  color: var(--pg-text) !important;
+}
+.ui-jqgrid :is(.ui-jqgrid-pager, .ui-jqgrid-toppager) .ui-pg-button:not(.ui-state-disabled):active {
+  background: var(--pg-border) !important;
+}
+.ui-jqgrid .ui-jqgrid-toppager {
+  border-top: 0 !important;
+  border-bottom: 1px solid var(--pg-border) !important;
+}
+/* buttons with a caption ("Advanced Search") size to their text instead of wrapping */
+.ui-jqgrid :is(.ui-jqgrid-pager, .ui-jqgrid-toppager) .ui-pg-button:has(.ui-pg-button-text) {
+  width: auto;
+  padding: 0 8px;
+  white-space: nowrap;
+}
+.ui-jqgrid :is(.ui-jqgrid-pager, .ui-jqgrid-toppager) .ui-pg-button:has(.ui-pg-button-text) .ui-pg-div {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ui-jqgrid :is(.ui-jqgrid-pager, .ui-jqgrid-toppager) .ui-pg-button.ui-state-disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.ui-jqgrid :is(.ui-jqgrid-pager, .ui-jqgrid-toppager) .ui-pg-button:has(> .ui-separator) {
+  width: 9px;
+  cursor: default;
+}
+.ui-jqgrid :is(.ui-jqgrid-pager, .ui-jqgrid-toppager) .ui-pg-button:has(> .ui-separator):hover {
+  background: transparent !important;
+}
+.ui-jqgrid :is(.ui-jqgrid-pager, .ui-jqgrid-toppager) .ui-separator {
+  width: 1px;
+  height: 18px;
+  margin: 0 4px;
+  border: 0 !important;
+  background: var(--pg-border);
+}
+.ui-jqgrid .ui-pg-input,
+.ui-jqgrid .ui-pg-selbox,
+.ui-jqgrid :is(.ui-jqgrid-pager, .ui-jqgrid-toppager) .ui-pg-selbox {
+  height: 32px !important;
+  padding: 0 8px !important;
+  border: 1px solid var(--pg-border-strong) !important;
+  border-radius: var(--pg-radius-control) !important;
+  background-color: var(--pg-surface) !important;
+  color: var(--pg-text) !important;
+  font-family: var(--pg-font);
+  font-size: var(--pg-text-sm) !important;
+  text-align: center;
+}
+.ui-jqgrid .ui-pg-selbox {
+  min-width: 64px;
+}
+.ui-jqgrid .ui-paging-info {
+  color: var(--pg-text-muted);
+  font-size: var(--pg-text-sm);
+}
+
+/* without a framework reset, form controls keep the browser's own font */
+.ui-jqgrid input,
+.ui-jqgrid select,
+.ui-jqgrid textarea,
+.ui-jqgrid button,
+.ui-jqdialog input,
+.ui-jqdialog select,
+.ui-jqdialog textarea,
+.ui-jqdialog button {
+  font-family: var(--pg-font);
+}
+.ui-jqgrid *,
+.ui-jqgrid *::before,
+.ui-jqgrid *::after,
+.ui-jqdialog *,
+.ui-jqdialog *::before,
+.ui-jqdialog *::after {
+  box-sizing: border-box;
+}
+
+/* ---------- inputs shared by grid toolbars and dialogs ---------- */
+.ui-jqgrid .ui-search-toolbar input[type="text"],
+.ui-jqgrid .ui-search-toolbar select,
+.ui-jqdialog input[type="text"],
+.ui-jqdialog input[type="number"],
+.ui-jqdialog input[type="email"],
+.ui-jqdialog input[type="password"],
+.ui-jqdialog input:not([type]),
+.ui-jqdialog select,
+.ui-jqdialog textarea {
+  box-sizing: border-box;
+  min-height: 34px;
+  padding: 6px 10px !important;
+  border: 1px solid var(--pg-border-strong) !important;
+  border-radius: var(--pg-radius-control) !important;
+  background: var(--pg-surface) !important;
+  box-shadow: none !important;
+  color: var(--pg-text) !important;
+  font-family: var(--pg-font) !important;
+  font-size: var(--pg-text-base) !important;
+  transition: border-color var(--pg-duration) var(--pg-ease), box-shadow var(--pg-duration) var(--pg-ease);
+}
+.ui-jqgrid .ui-search-toolbar input[type="text"],
+.ui-jqgrid .ui-search-toolbar select {
+  min-height: 30px;
+  padding: 4px 8px !important;
+  font-size: var(--pg-text-sm) !important;
+}
+.ui-jqgrid .ui-search-toolbar input:focus,
+.ui-jqgrid .ui-search-toolbar select:focus,
+.ui-jqgrid .ui-pg-input:focus,
+.ui-jqgrid .ui-pg-selbox:focus,
+.ui-jqdialog input:focus,
+.ui-jqdialog select:focus,
+.ui-jqdialog textarea:focus {
+  border-color: var(--pg-accent) !important;
+  box-shadow: 0 0 0 3px var(--pg-accent-ring) !important;
+  outline: 0;
+}
+.ui-jqgrid :focus-visible,
+.ui-jqdialog .fm-button:focus-visible,
+.ui-jqdialog .ui-jqdialog-titlebar-close:focus-visible {
+  outline: 2px solid var(--pg-accent);
+  outline-offset: 2px;
+}
+
+/* ---------- dialogs: form edit, view, search, alerts ---------- */
+.jqmOverlay,
+.ui-widget-overlay {
+  background: var(--pg-overlay) !important;
+  opacity: 1 !important;
+  backdrop-filter: blur(2px);
+}
+.ui-jqdialog {
+  overflow: hidden;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: var(--pg-radius) !important;
+  background: var(--pg-surface) !important;
+  box-shadow: var(--pg-shadow-dialog) !important;
+  color: var(--pg-text);
+  font-family: var(--pg-font) !important;
+  font-size: var(--pg-text-base);
+}
+.ui-jqdialog .ui-jqdialog-titlebar {
+  display: flex;
+  align-items: center;
+  height: auto !important;
+  min-height: 52px;
+  padding: 0 20px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--pg-border) !important;
+  background: var(--pg-surface) !important;
+  color: var(--pg-text) !important;
+}
+.ui-jqdialog .ui-jqdialog-title {
+  margin: 0 !important;
+  color: var(--pg-text) !important;
+  font-family: var(--pg-font) !important;
+  font-size: var(--pg-text-lg) !important;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.ui-jqdialog .ui-jqdialog-titlebar-close {
+  display: grid;
+  place-items: center;
+  top: 50% !important;
+  right: 12px !important;
+  width: 30px;
+  height: 30px;
+  margin-top: -15px !important;
+  border-radius: var(--pg-radius-control);
+  color: var(--pg-text-muted) !important;
+}
+.ui-jqdialog .ui-jqdialog-titlebar-close:hover {
+  background: var(--pg-surface-sunken) !important;
+  color: var(--pg-text) !important;
+}
+.ui-jqdialog .ui-jqdialog-content {
+  padding: 16px 20px !important;
+  border: 0 !important;
+  background: var(--pg-surface) !important;
+  color: var(--pg-text);
+  font-size: var(--pg-text-base);
+}
+.ui-jqdialog .ui-jqdialog-content .EditTable,
+.ui-jqdialog .FormGrid {
+  background: transparent !important;
+}
+.ui-jqdialog .ui-jqdialog-content .EditTable td {
+  padding: 6px 4px;
+  border: 0;
+}
+.ui-jqdialog .ui-jqdialog-content .CaptionTD {
+  padding-right: 16px !important;
+  color: var(--pg-text-muted);
+  font-size: var(--pg-text-sm);
+  font-weight: 500;
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+/* checkboxes and radios keep their own size: stretched, they sit in the middle of the cell */
+.ui-jqdialog .ui-jqdialog-content .DataTD input:not([type="checkbox"]):not([type="radio"]),
+.ui-jqdialog .ui-jqdialog-content .DataTD select,
+.ui-jqdialog .ui-jqdialog-content .DataTD textarea {
+  width: 100% !important;
+}
+/* select2 hides the original <select> as a 1px absolutely positioned box; stretched to 100%
+   it pokes out of the form and gives it a horizontal scrollbar */
+.ui-jqdialog .ui-jqdialog-content .DataTD select.select2-hidden-accessible {
+  width: 1px !important;
+}
+/* form footer: navigation arrows left, actions right */
+.ui-jqdialog .EditTable .navButton,
+.ui-jqdialog .EditButton {
+  padding-top: 12px !important;
+}
+.ui-jqdialog hr {
+  height: 0;
+  margin: 12px 0;
+  border: 0 !important;
+  border-top: 1px solid var(--pg-border) !important;
+  background: none;
+}
+
+/* buttons */
+.ui-jqdialog .fm-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  margin: 0 0 0 8px !important;
+  padding: 0 14px !important;
+  border: 1px solid var(--pg-border-strong) !important;
+  border-radius: var(--pg-radius-control) !important;
+  background: var(--pg-surface) !important;
+  color: var(--pg-text) !important;
+  font-family: var(--pg-font);
+  font-size: var(--pg-text-sm);
+  font-weight: 600;
+  text-decoration: none !important;
+  cursor: pointer;
+  transition: background-color var(--pg-duration) var(--pg-ease), border-color var(--pg-duration) var(--pg-ease);
+}
+.ui-jqdialog .fm-button:hover {
+  border-color: var(--pg-text-muted) !important;
+  background: var(--pg-surface-muted) !important;
+}
+.ui-jqdialog .fm-button .fa,
+.ui-jqdialog .fm-button .ui-icon {
+  position: static !important;
+  margin: 0 !important;
+  color: inherit !important;
+}
+/* primary actions: Submit, Find, Delete confirm */
+.ui-jqdialog #sData,
+.ui-jqdialog [id$="_search"].fm-button,
+.ui-jqdialog #dData {
+  border-color: var(--pg-accent) !important;
+  background: var(--pg-accent) !important;
+  color: var(--pg-on-accent) !important;
+}
+.ui-jqdialog #sData:hover,
+.ui-jqdialog [id$="_search"].fm-button:hover {
+  border-color: var(--pg-accent-hover) !important;
+  background: var(--pg-accent-hover) !important;
+}
+.ui-jqdialog #dData {
+  border-color: var(--pg-danger) !important;
+  background: var(--pg-danger) !important;
+}
+/* action buttons stay on one line; jqGrid's 240px delete/alert dialogs are too narrow for that */
+.ui-jqdialog .EditButton {
+  white-space: nowrap;
+}
+.ui-jqdialog[id^="delmod"],
+.ui-jqdialog[id^="alertmod"] {
+  min-width: 320px;
+}
+
+/* record navigation arrows are icon-only */
+.ui-jqdialog #pData,
+.ui-jqdialog #nData {
+  width: 36px;
+  margin: 0 4px 0 0 !important;
+  padding: 0 !important;
+}
+
+/* search filter builder */
+/* the dialog: jqGrid opens it at a fixed width (450px by default) that is narrower than
+   one filter row (column, operator, value, delete), so it scrolled sideways. Size it to its
+   rules instead, also as rules and groups are added, within the viewport. */
+.ui-jqdialog[id^="searchmodfbox_"] {
+  width: max-content !important;
+  min-width: min(450px, calc(100vw - 16px));
+  max-width: calc(100vw - 16px);
+}
+.ui-jqdialog .searchFilter table.group {
+  border-collapse: separate;
+  border-spacing: 0 8px;
+}
+.ui-jqdialog .searchFilter table.group th {
+  padding-bottom: 4px;
+  text-align: left;
+}
+.ui-jqdialog .searchFilter .add-group,
+.ui-jqdialog .searchFilter .add-rule,
+.ui-jqdialog .searchFilter .delete-group,
+.ui-jqdialog .searchFilter .delete-rule {
+  height: 30px;
+  min-width: 30px;
+  border: 1px solid var(--pg-border-strong);
+  border-radius: var(--pg-radius-control);
+  background: var(--pg-surface);
+  color: var(--pg-text);
+  cursor: pointer;
+}
+.ui-jqdialog .searchFilter .add-rule:hover,
+.ui-jqdialog .searchFilter .add-group:hover {
+  border-color: var(--pg-accent);
+  color: var(--pg-accent);
+}
+.ui-jqdialog .searchFilter .delete-rule:hover,
+.ui-jqdialog .searchFilter .delete-group:hover {
+  border-color: var(--pg-danger);
+  color: var(--pg-danger);
+}
+
+/* resize grip in the dialog corner */
+.ui-jqdialog .jqResize {
+  color: var(--pg-border-strong) !important;
+}
+
+/* validation / info messages */
+.ui-jqdialog .ui-state-error,
+.ui-jqdialog #FormError td {
+  padding: 8px 12px !important;
+  border: 0 !important;
+  border-radius: var(--pg-radius-control);
+  background: color-mix(in srgb, var(--pg-danger) 12%, transparent) !important;
+  color: var(--pg-danger) !important;
+}
+
+/* ---------- behavior carried over from css/datagrid.css (not loaded by this theme) ---------- */
+/* long forms scroll inside the dialog */
+.ui-jqdialog .ui-jqdialog-content {
+  max-height: 93vh;
+  overflow: auto !important;
+}
+/* WYSIWYG editor and autocomplete fill their form cell */
+.ui-jqdialog td.DataTD > div.wysiwyg,
+.ui-jqdialog td.DataTD > div.trumbowyg-box {
+  width: 100% !important;
+  background: var(--pg-surface);
+}
+.ui-jqdialog td.DataTD > div.wysiwyg iframe {
+  width: 100% !important;
+}
+.ui-jqdialog .select2-container.FormElement {
+  width: 100% !important;
+  padding: 0;
+}
+/* top pager */
+.ui-jqgrid .ui-jqgrid-toppager .ui-pg-table td {
+  padding: 0 !important;
+}
+/* subgrid expand/collapse cell */
+.ui-jqgrid td.ui-sgcollapsed.sgcollapsed,
+.ui-jqgrid td.ui-sgcollapsed.sgexpanded {
+  background: var(--pg-surface-muted) !important;
+  cursor: pointer;
+}
+/* space below each grid, e.g. between a master and its detail grid */
+.ui-jqgrid {
+  margin-bottom: 15px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-jqgrid *,
+  .ui-jqdialog * {
+    transition: none !important;
+  }
+}

@@ -25,7 +25,7 @@ class C_GridSession{
         $_SESSION[$session] = $value;
     }
     public function get($session) {
-        return $_SESSION[$session];
+        return isset($_SESSION[$session]) ? $_SESSION[$session] : null;
     }
 }
 
@@ -33,7 +33,27 @@ class C_GridSession{
 class C_SessionMaker{
     public static function getSession($framework='')
     {
-        if(!session_id()){ session_start();}
-        return new C_GridSession();
+        if($framework=='JOOMLA'){
+
+            if (!defined('_JEXEC') )
+                define( '_JEXEC', 1 );
+
+            if (!defined('JPATH_BASE') )
+                define('JPATH_BASE', '/var/www/mysite'); #UPDATE this value to the actual Joomla site file path
+
+            require_once( JPATH_BASE. '/includes/defines.php' );
+            require_once( JPATH_BASE. '/includes/framework.php');
+
+            $mainframe = \JFactory::getApplication('site');
+            $mainframe -> initialise();
+
+            $session = \JFactory::getSession();
+
+            return $session;
+        }else{
+            if(!session_id()){ session_start();}
+            return new C_GridSession();
+        }
     }
+
 }
