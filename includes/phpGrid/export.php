@@ -1,109 +1,150 @@
 <?php
-use phpCtrl\C_Database as C_Database;
+use phpCtrl\C_DataBase as C_DataBase;
+use phpCtrl\C_DataGrid as C_DataGrid;
+use phpCtrl\C_DataArray as C_DataArray;
+use phpCtrl\C_Utility as C_Utility;
+use phpCtrl\C_SearchFilter as C_SearchFilter;
+use phpCtrl\C_SessionMaker as C_SessionMaker;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
-require_once('phpGrid.php');
-if(!session_id()){ session_start();}  
 
-$gridName = isset($_GET['gn']) ? $_GET['gn'] : die('PHPGRID_ERROR: URL parameter "gn" is not defined');
+require_once("phpGrid.php");
+C_Utility::handle_endpoint_errors();   // clean PHPGRID_ERROR responses, no stack traces
 
-$grid_sql	= $_SESSION[GRID_SESSION_KEY.'_'.$gridName.'_sql'];
-$sql_key	= $_SESSION[GRID_SESSION_KEY.'_'.$gridName.'_sql_key'];
-$sql_fkey	= $_SESSION[GRID_SESSION_KEY.'_'.$gridName.'_sql_fkey'];
-$sql_table	= $_SESSION[GRID_SESSION_KEY.'_'.$gridName.'_sql_table'];  
-$sql_filter	= $_SESSION[GRID_SESSION_KEY.'_'.$gridName.'_sql_filter'];       
-$db_connection = unserialize($_SESSION[GRID_SESSION_KEY.'_'.$gridName.'_db_connection']);
-$export_type= isset($_GET['export_type']) ? $_GET['export_type'] : $_SESSION[GRID_SESSION_KEY.'_'.$gridName.'_export_type'];
-$col_titles	= unserialize($_SESSION[GRID_SESSION_KEY.'_'.$gridName.'_col_titles']);
-$col_hiddens= array_keys(unserialize($_SESSION[GRID_SESSION_KEY.'_'.$gridName.'_col_hiddens']));	// extract the keys only from multiple dimension       
+$session = C_SessionMaker::getSession(FRAMEWORK);
 
+$gridName = isset($_GET['gn']) ? $_GET['gn'] : C_Utility::fail('PHPGRID_ERROR: URL parameter "gn" is not defined.');
+
+$grid_sql	= $session->get(GRID_SESSION_KEY.'_'.$gridName.'_sql');
+$sql_key	= $session->get(GRID_SESSION_KEY.'_'.$gridName.'_sql_key');
+$sql_fkey	= $session->get(GRID_SESSION_KEY.'_'.$gridName.'_sql_fkey');
+$sql_table	= $session->get(GRID_SESSION_KEY.'_'.$gridName.'_sql_table');  
+$sql_filter	= $session->get(GRID_SESSION_KEY.'_'.$gridName.'_sql_filter');       
+$db_connection = unserialize($session->get(GRID_SESSION_KEY.'_'.$gridName.'_db_connection'));
+// Export must be enabled for the grid (enable_export); the request may then pick the
+// format, e.g. a custom Excel/PDF/CSV picker (see examples/grid_export.php).
+$enabled_export_type = $session->get(GRID_SESSION_KEY.'_'.$gridName.'_export_type');
+$export_type = ($enabled_export_type !== null && isset($_GET['export_type'])) ? $_GET['export_type'] : $enabled_export_type;
+$col_titles	= unserialize($session->get(GRID_SESSION_KEY.'_'.$gridName.'_col_titles'));
+$col_hiddens= array_keys(unserialize($session->get(GRID_SESSION_KEY.'_'.$gridName.'_col_hiddens')));	// extract the keys only from multiple dimension       
+$col_edittypes	= unserialize($session->get(GRID_SESSION_KEY.'_'.$gridName.'_col_edittypes'));
+$pdf_logo   = unserialize($session->get(GRID_SESSION_KEY.'_'.$gridName.'_pdf_logo'));
+
+if(!is_array($grid_sql)){
 // establish db connection
-$cn = $db_connection;
-if(empty($cn)){
-    $db = new C_Database(PHPGRID_DB_HOSTNAME, PHPGRID_DB_USERNAME, PHPGRID_DB_PASSWORD, PHPGRID_DB_NAME, PHPGRID_DB_TYPE, PHPGRID_DB_CHARSET);
+    $cn = $db_connection;
+    if(empty($cn)){
+        $db = new C_DataBase(PHPGRID_DB_HOSTNAME, PHPGRID_DB_USERNAME, PHPGRID_DB_PASSWORD, PHPGRID_DB_NAME, PHPGRID_DB_TYPE, PHPGRID_DB_CHARSET);
+    }
+    else {
+        $db = new C_DataBase($cn["hostname"],$cn["username"],$cn["password"],$cn["dbname"],$cn["dbtype"],$cn["dbcharset"]);
+    }
+}else{
+    $db = new C_DataArray($grid_sql);
 }
-else {       
-    $db = new C_Database($cn["hostname"],$cn["username"],$cn["password"],$cn["dbname"],$cn["dbtype"],$cn["dbcharset"]);        
-}
+
 
 // die if export wasn't enabled
 if($export_type==null){
-    die('Cannot export the grid. Please use enable_export() method to enable this feature.');
+    C_Utility::fail('PHPGRID_ERROR: Cannot export the grid. Please use enable_export() method to enable this feature.');
 }
+
+
+
+// --------------------- 4/20/2015 Richard ----------------
+// if it is a masterdetail/subgrid, obtain the value of the foreign key to used later for filtering
+$src = isset($_GET['src'])?$_GET['src']:'';
+if($src=='md' || $src=='sg'){
+    $fkey = $sql_fkey;//$_GET['fkey'];
+    $fkey_value = $_GET['fkey_value'];
+
+    if(C_Utility::is_debug()){
+        echo 'fkey: ' ."\n";
+        print_r($fkey);
+        echo  "\n";
+        echo 'fkey_value: ' ."\n";
+        print_r($fkey_value);
+    }
+}
+// create filter if exporting from a detail grid. Must check if the key is actual a database field
+$sql_filter_md = '';
+if($src=='md' || $src=='sg'){
+    $sql_filter_md = $db->quote_field($grid_sql, $fkey, $fkey_value);     // 1. master foreign key filter
+}
+// ------------ end of master detail filter ----------------
+
+
+// get original column names and add 1 as default sortname
+$rs          = $db->select_limit($grid_sql, 1, 1);
+$col_dbnames = [];
+if (!is_array($grid_sql)) {
+    $col_dbnames = $db->get_col_dbnames($rs);
+}
+array_push($col_dbnames, 1);
+
 
 $sord = (isset($_GET['sord']))?$_GET['sord']:'asc'; 
 $sidx = (isset($_GET['sidx']))?$_GET['sidx']:1; 
 if(!$sidx) $sidx =1; 
 
-$rs     = $db->select_limit($grid_sql, 1, 1);
+// The default sortname is 1 unless user click column name to sort whereaas the actual field name is provided
+$sidx = C_Utility::white_list($sidx, $col_dbnames, "Invalid field name");
+// sorting order - at first time sortorder. The default is 'asc'
+$sord = C_Utility::white_list($sord, ["asc","desc"], "Invalid ORDER BY direction");
 
-// prepare sql where statement. must check if the key is actual a database field
-$sqlWhere = "";
+
+
+
+// Column names, operators and groupOp are whitelisted and every search value is
+// bound as a parameter (see C_SearchFilter). Array-sourced grids have no SQL to filter.
 $searchOn = (isset($_REQUEST['_search']) && $_REQUEST['_search'] =='true')?true:false;
-if($searchOn) {
-    $col_dbnames = array();
-    $col_dbnames = $db->get_col_dbnames($rs);
-    foreach($_REQUEST as $key=>$value) {
-        if(in_array($key, $col_dbnames)){
-            $fm_type = $db->field_metatype($rs, $db->field_index($rs, $key));
-            switch ($fm_type) {
-                case 'I':
-                case 'N':
-                case 'R':
-                case 'L':
-                    $sqlWhere .= " AND ".$key." = ".$value;
-                    break;
-                default:
-                    $sqlWhere .= " AND ".$key." LIKE '".$value."%'";
-                    break;
-            }    
-        }
-        
-    }
-	//advanced search    
-	if(isset($_REQUEST['filters']) && $_REQUEST['filters'] !=''){
-		$op = array("eq"=>" ='%s' ","ne"=>" !='%s' ","lt"=>" < %s ",
-			"le"=>" <= %s ","gt"=>" > %s ","ge"=>" >= %s ",
-			"bw"=>" like '%s%%' ","bn"=>" not like '%s%%' " ,
-			"in"=> " in (%s) ","ni"=> " not in (%s) ",
-			"ew"=> " like '%%%s' ","en"=> " not like '%%%s' ",
-			"cn"=> " like '%%%s%%' ","nc"=> " not like '%%%s%%' ");
-		
-		$filters = json_decode(stripcslashes($_REQUEST['filters']));
-		$groupOp = $filters->groupOp;
-		$rules = $filters->rules;
-		
-		for($i=0;$i<count($rules);$i++){                   
-			$sqlWhere .=  $groupOp . " ". $rules[$i]->field .
-				sprintf($op[$rules[$i]->op],$rules[$i]->data);              
-		}
-	}
+$search = array('sql' => '', 'params' => array());
+if($searchOn && !is_array($grid_sql)) {
+    $search = C_SearchFilter::build($_REQUEST, $col_dbnames, function($colName) use ($db, $rs){
+        return $db->field_metatype($rs, $db->field_index($rs, $colName));
+    });
 }
+$sqlWhere = $search['sql'];
+$searchOn = ($sqlWhere != '');
 
-// remove leading sql AND
-$pos = strpos($sqlWhere,'AND ');
-if ($pos !== false) {
-	$sqlWhere = substr_replace($sqlWhere,'',$pos,strlen('AND '));
-}
 
 // set ORDER BY. Don't use if user hasn't select a sort
 $sqlOrderBy = (!$sidx) ? "" : " ORDER BY $sidx $sord";
 
       
 // ********* prepare the final query ***********************
-if($sql_filter != '' && $searchOn){
-	$SQL = $grid_sql .' WHERE '. $sql_filter .' AND '. $sqlWhere . $sqlOrderBy;
-}elseif($sql_filter != '' && !$searchOn){
-	$SQL = $grid_sql .' WHERE '. $sql_filter . $sqlOrderBy;
-}elseif($sql_filter == '' && $searchOn){
-	$SQL = $grid_sql .' WHERE '. $sqlWhere . $sqlOrderBy;
-}else{	// if($sql_filter == '' && !$searchOn){
-	$SQL = $grid_sql . $sqlOrderBy;
+$SQL = '';
+if(!is_array($grid_sql)){
+    if($sql_filter != '' && $searchOn){
+        $SQL = $grid_sql .' WHERE '
+                            .(($sql_filter_md!='') ? $sql_filter_md.' AND ' : '')
+                            .$sql_filter .' AND (' .$sqlWhere .')' 
+                            .$sqlOrderBy;
+    }elseif($sql_filter != '' && !$searchOn){
+        $SQL = $grid_sql .' WHERE '
+                            .(($sql_filter_md!='') ? $sql_filter_md.' AND ' : '') 
+                            .$sql_filter 
+                            .$sqlOrderBy;
+    }elseif($sql_filter == '' && $searchOn){
+        $SQL = $grid_sql .' WHERE '
+                            .(($sql_filter_md!='') ? $sql_filter_md.' AND ' : '')
+                            .$sqlWhere 
+                            .$sqlOrderBy;
+    }else{  // if($sql_filter == '' && !$searchOn){
+        $SQL = $grid_sql .  (($sql_filter_md!='') ? ' WHERE '.$sql_filter_md : '')
+                            .$sqlOrderBy;
+    }
 }
+//echo 'sql_filter: '. $sql_filter;
+//echo 'searchOn: '. $searchOn;
+//echo $SQL; 
 
-$result     = $db->db_query($SQL);
+$result     = $db->db_query($SQL, $search['params']);
 $row_count  = $db->num_rows($result);
 $col_count  = $db->num_fields($result);
 
+// $col_titles = array();
+// $col_titles = $col_titles();
 $j = 0;
 
 switch(strtoupper($export_type)){
@@ -118,7 +159,6 @@ switch(strtoupper($export_type)){
         
         echo '<table border="1" cellspacing="0" cellpadding="2">' ."\n";  
         echo '<thead>' ."\n";      
-        while($row = $db->fetch_array_assoc($rs)) {
             echo '<tr style="background-color:black;color:white">';
             for($j = 0; $j < $db->num_fields($rs); $j++) {
                 $col_name = $db->field_name($rs, $j);                             
@@ -132,20 +172,35 @@ switch(strtoupper($export_type)){
                 }        
             }
             echo '</tr>' ."\n";            
-        }
-        echo '</thead>' ."\n";  
+        echo '</thead>' ."\n";
             
-        echo '<tbody>' ."\n";                  
-        while($row = $db->fetch_array_assoc($result)) {
-            echo '<tr>';
-            for($j = 0; $j < $db->num_fields($result); $j++) {
-                $col_name = $db->field_name($result, $j);                             
-                if(!in_array($col_name, $col_hiddens))
-                    echo '<td>'. $row[$col_name] .'&nbsp;</td>';    
+        echo '<tbody>' ."\n";
+        if(!is_array($grid_sql)){
+            while($row = $db->fetch_array_assoc($result)) {
+                echo '<tr>';
+                for($j = 0; $j < $db->num_fields($result); $j++) {
+                    $col_name = $db->field_name($result, $j);
+                    if(!in_array($col_name, $col_hiddens)){                // if not hidden
+                        echo '<td>'. text_by_edittype($col_edittypes, $col_name, $row[$col_name]) .'&nbsp;</td>';
+                    }
+                }
+                echo '</tr>' ."\n";
             }
-            echo '</tr>' ."\n";            
+        }else{
+            foreach($result as $row){
+                echo '<tr>';
+                for($j = 0; $j < $db->num_fields($result); $j++) {
+                    $col_name = $db->field_name($row, $j);
+                    // echo 'col_name: '. $col_name ."\n";
+                    if(!in_array($col_name, $col_hiddens)){
+                        echo '<td>'. text_by_edittype($col_edittypes, $col_name, $row[$col_name]) .'&nbsp;</td>';
+                        // echo '<td>'. $row[$col_name] .'&nbsp;</td>';
+                    }
+                }
+                echo '</tr>' ."\n";
+            }
         }
-        echo '</tbody>' ."\n";              
+        echo '</tbody>' ."\n";
         echo '</table>' ."\n";      
         
         echo '</body></html>';      
@@ -153,6 +208,88 @@ switch(strtoupper($export_type)){
     break;
 
     case 'EXCEL':
+        // Just convert the HTML output to Excel and save the day. 
+        $html_table = '';
+        $html_table .= '<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8" /></head><body>'. "\n";
+        
+        $html_table .= '<table border="1" cellspacing="0" cellpadding="2">' ."\n";  
+        $html_table .= '<thead>' ."\n";      
+            $html_table .= '<tr style="background-color:black;color:white">';
+            for($j = 0; $j < $db->num_fields($rs); $j++) {
+                $col_name = $db->field_name($rs, $j);                             
+                if(!in_array($col_name, $col_hiddens)){
+                    if(isset($col_titles[$col_name])){
+                        $html_table .= '<th>'. $col_titles[$col_name] .'</th>';                
+                    }else{
+                        $html_table .= '<th>'. $col_name .'</th>';                                
+                    }
+                    
+                }        
+            }
+            $html_table .= '</tr>' ."\n";            
+        $html_table .= '</thead>' ."\n";
+            
+        $html_table .= '<tbody>' ."\n";
+        if(!is_array($grid_sql)){
+            while($row = $db->fetch_array_assoc($result)) {
+                $html_table .= '<tr>';
+                for($j = 0; $j < $db->num_fields($result); $j++) {
+                    $col_name = $db->field_name($result, $j);
+                    if(!in_array($col_name, $col_hiddens)){                // if not hidden
+                        $html_table .= '<td>'. text_by_edittype($col_edittypes, $col_name, $row[$col_name]) .'</td>';
+                    }
+                }
+                $html_table .= '</tr>' ."\n";
+            }
+        }else{
+            foreach($result as $row){
+                $html_table .= '<tr>';
+                for($j = 0; $j < $db->num_fields($result); $j++) {
+                    $col_name = $db->field_name($row, $j);
+                    // echo 'col_name: '. $col_name ."\n";
+                    if(!in_array($col_name, $col_hiddens)){
+                        $html_table .= '<td>'. text_by_edittype($col_edittypes, $col_name, $row[$col_name]) .'</td>';
+                    }
+                }
+                $html_table .= '</tr>' ."\n";
+            }
+        }
+        $html_table .= '</tbody>' ."\n";
+        $html_table .= '</table>' ."\n";      
+        
+        $html_table .= '</body></html>'; 
+
+
+        $filename = "Grid_". $gridName ."_".date("Y-m-d") .".xlsx";
+
+        // save $table inside temporary file that will be deleted later
+        $tmpfile = tempnam(sys_get_temp_dir(), 'html');
+        file_put_contents($tmpfile, $html_table);
+
+        $spreadsheet = new Spreadsheet();
+        $reader = new \PhpOffice\PhpSpreadsheet\Reader\Html();
+        @$reader->loadIntoExisting($tmpfile, $spreadsheet); // @ to surpress any HTML warnings
+        $spreadsheet->getActiveSheet()->setTitle($gridName);
+
+        unlink($tmpfile); // delete temporary file
+
+        header("Content-Type:   application/vnd.ms-excel; charset=utf-8");
+        header("Content-Disposition: attachment; filename=". $filename);  //File name extension was wrong
+        header("Expires: 0");
+        header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+        header("Cache-Control: private",false);
+
+        // Creates a writer to output the $spreadsheet content
+        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $writer->save('php://output');
+
+        exit;
+
+    break;
+
+
+
+    case 'EXCELXML':
         header("Content-type: text/xml");
         header("Content-disposition:  attachment; filename=Grid_". $gridName ."_".date("Y-m-d").".xml");
         header ('Expires: 0');
@@ -212,48 +349,82 @@ switch(strtoupper($export_type)){
               x:FullRows="1">';
 
         // grid header
-        while($row = $db->fetch_array_assoc($rs)) {
-            echo '<Row>';
-            for($j = 0; $j < $col_count; $j++) {
-                $col_name = $db->field_name($rs, $j);                          
-                if(!in_array($col_name, $col_hiddens)){
-                    if(isset($col_titles[$col_name])){
-                        echo '<Cell ss:StyleID="sHeader"><Data ss:Type="String">'. str_replace('>', '&gt;', str_replace('<', '&lt;', $col_titles[$col_name])) .'</Data></Cell>';                
-                    }else{
-                        echo '<Cell ss:StyleID="sHeader"><Data ss:Type="String">'. str_replace('>', '&gt;', str_replace('<', '&lt;', $col_name)) .'</Data></Cell>';                                
-                    }
-                    
-                }        
+        echo '<Row>';
+        for($j = 0; $j < $col_count; $j++) {
+            $col_name = $db->field_name($rs, $j);
+            if(!in_array($col_name, $col_hiddens)){
+                if(isset($col_titles[$col_name])){
+                    echo '<Cell ss:StyleID="sHeader"><Data ss:Type="String">'. xml_text($col_titles[$col_name]) .'</Data></Cell>';
+                }else{
+                    echo '<Cell ss:StyleID="sHeader"><Data ss:Type="String">'. xml_text($col_name) .'</Data></Cell>';
+                }
+
             }
-            echo '</Row>' ."\n";            
         }
+        echo '</Row>' ."\n";
 
         // grid body
-        $fm_type = 'C'; // field meta type   
-        while($row = $db->fetch_array_assoc($result)) {
-            echo '<Row>';
-            for($j = 0; $j < $col_count; $j++) {
-                $col_name = $db->field_name($result, $j);                             
-                if(!in_array($col_name, $col_hiddens)){
-                    $fm_type   = $db->field_metatype($result, $db->field_index($result, $col_name));   
-                    switch($fm_type){
-                        case 'D':
-                            echo '<Cell ss:StyleID="sDate"><Data ss:Type="String">'. str_replace('>', '&gt;', str_replace('<', '&lt;', $row[$col_name])) .'</Data></Cell>';   
-                            break;
-                        case 'I':
-                        case 'R':
-                            echo '<Cell ss:StyleID="sNumber"><Data ss:Type="Number">'. $row[$col_name] .'</Data></Cell>';   
-                            break;
-                        case 'N':
-                            echo '<Cell ss:StyleID="sDecimal"><Data ss:Type="Number">'. $row[$col_name] .'</Data></Cell>';   
-                            break;
-                        default:
-                            echo '<Cell><Data ss:Type="String">'. str_replace('>', '&gt;', str_replace('<', '&lt;', $row[$col_name])) .'</Data></Cell>';    
+        $fm_type = 'C'; // field meta type
+        if(!is_array($grid_sql)){
+            while($row = $db->fetch_array_assoc($result)) {
+                echo '<Row>';
+                for($j = 0; $j < $col_count; $j++) {
+                    $col_name = $db->field_name($result, $j);
+                    if(!in_array($col_name, $col_hiddens)){
+                        // $fm_type   = $db->field_metatype($result, $db->field_index($result, $col_name));
+                        $display_text = text_by_edittype($col_edittypes, $col_name, $row[$col_name]);
+                        echo '<Cell ss:StyleID="sDate"><Data ss:Type="String">'. xml_text($display_text) .'</Data></Cell>';
+                        /*
+                        switch($fm_type){
+                            case 'D':
+                                echo '<Cell ss:StyleID="sDate"><Data ss:Type="String">'. xml_text($display_text) .'</Data></Cell>';
+                                break;
+                            case 'I':
+                            case 'R':
+                                echo '<Cell ss:StyleID="sNumber"><Data ss:Type="Number">'. $row[$col_name] .'</Data></Cell>';
+                                break;
+                            case 'N':
+                                echo '<Cell ss:StyleID="sDecimal"><Data ss:Type="Number">'. $row[$col_name] .'</Data></Cell>';
+                                break;
+                            default:
+                                echo '<Cell><Data ss:Type="String">'. xml_text($display_text) .'</Data></Cell>';
+                        }
+                        */
                     }
                 }
+                echo '</Row>' ."\n";
             }
-            echo '</Row>' ."\n";            
+        }else{
+            foreach($result as $row) {
+                echo '<Row>';
+                for($j = 0; $j < $col_count; $j++) {
+                    $col_name = $db->field_name($row, $j);
+                    if(!in_array($col_name, $col_hiddens)){
+                        // $fm_type   = $db->field_metatype($result, $db->field_index($result, $col_name));
+                        $display_text = text_by_edittype($col_edittypes, $col_name, $row[$col_name]);
+                        echo '<Cell ss:StyleID="sDate"><Data ss:Type="String">'. xml_text($display_text) .'</Data></Cell>';
+                        /*
+                        switch($fm_type){
+                            case 'D':
+                                echo '<Cell ss:StyleID="sDate"><Data ss:Type="String">'. xml_text($row[$col_name]) .'</Data></Cell>';
+                                break;
+                            case 'I':
+                            case 'R':
+                                echo '<Cell ss:StyleID="sNumber"><Data ss:Type="Number">'. $row[$col_name] .'</Data></Cell>';
+                                break;
+                            case 'N':
+                                echo '<Cell ss:StyleID="sDecimal"><Data ss:Type="Number">'. $row[$col_name] .'</Data></Cell>';
+                                break;
+                            default:
+                                echo '<Cell><Data ss:Type="String">'. xml_text($row[$col_name]) .'</Data></Cell>';
+                        }
+                        */
+                    }
+                }
+                echo '</Row>' ."\n";
+            }
         }
+
 
         echo '</Table>';
         echo '<WorksheetOptions 
@@ -276,17 +447,53 @@ switch(strtoupper($export_type)){
         </Worksheet>
         </Workbook>';    
     break;
+
+    default:
+        C_Utility::fail('PHPGRID_ERROR: Unsupported export type.');
 }
 
-function outputCSV($data) {
-	$outstream = fopen("php://output", "w");
-	function __outputCSV(&$vals, $key, $filehandler) {
-		fputcsv($filehandler, $vals); // add parameters if you want
-	}
-	array_walk($data, "__outputCSV", $outstream);
-	fclose($outstream);
+
+// e.g. str_kvpair: 1:San Francisco;2:Boston;3:NYC;test:Paris;5:Tokyo;6:Sydney;7:London
+// convert to array e.g. $arr_kvpair[1] = 'San ...'
+function array_kvpair($str_kvpair){
+    $tmp = explode(';', $str_kvpair);
+    $arr_kvpair = array();
+    foreach($tmp as $key => $value){
+        $k = substr($value, 0, strpos($value, ':'));
+        $v = substr($value, strpos($value, ':')+1);
+        $arr_kvpair[$k] = $v;
+    }
+
+    return $arr_kvpair;
 }
 
+// Escape a value for a SpreadsheetML <Data> cell. NULL (an empty database cell) becomes ''.
+function xml_text($value){
+    return htmlspecialchars((string)$value, ENT_XML1 | ENT_COMPAT, 'UTF-8');
+}
+
+// For now, the only edit type we need to deal with here is "select" 
+function text_by_edittype(&$col_edtypes, $col, $select_key){
+    $display_text = '';
+
+    if(isset($col_edtypes[$col])){
+        if($col_edtypes[$col]['type']=='select'){    // if edit type is select
+            $arr_kvpair = array_kvpair($col_edtypes[$col]['value']);
+            // print_r($arr_kvpair);
+            if($select_key !== null && isset($arr_kvpair[$select_key])){   // null offsets are deprecated in PHP 8.5
+                $display_text = $arr_kvpair[$select_key];
+            }else{
+                $display_text = '';
+            }
+        }else{
+            $display_text = $select_key;
+        }
+    }else{
+        $display_text = $select_key;    // default
+    }
+
+    return $display_text;
+}
           
 // free resource       
 $db = null;

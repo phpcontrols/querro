@@ -332,3 +332,19 @@ overflow-x: hidden !important;
 .ui-jqgrid-jquery-ui.ui-jqgrid {
     margin-bottom: 15px;
 }
+
+/* search dialog: jqGrid opens it at a fixed width (450px by default) that is narrower than
+   one filter row (column, operator, value, delete), so it scrolled sideways. Size it to its
+   rules instead, also as rules and groups are added, within the viewport. The second
+   selector outranks the fixed 600px for Bootstrap-themed dialogs above. */
+.ui-jqdialog[id^="searchmodfbox_"],
+.modal.ui-jqgrid-bootstrap.ui-jqdialog[id^="searchmodfbox_"] {
+  width: max-content !important;
+  min-width: min(450px, calc(100vw - 16px));
+  max-width: calc(100vw - 16px);
+}
+/* Bootstrap 4's .form-inline (which jqGrid adds to the filter table) makes it a wrapping
+   flex box that is narrower than its rows; keep it a table so the dialog can measure it */
+.ui-jqdialog .searchFilter table.group.form-inline {
+  display: table;
+}

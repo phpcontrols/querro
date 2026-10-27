@@ -67,7 +67,8 @@ if ($shareKey) {
             if ($hidden) $dg->set_col_hidden($col_name);
             if ($readonly) $dg->set_col_readonly($col_name);
             if ($required) $dg->set_col_required($col_name);
-            if ($wysiwyg) $dg->set_col_wysiwyg($col_name);
+            // WYSIWYG, conditional format and global search need the full phpGrid; Lite skips them
+            if ($wysiwyg && method_exists($dg, 'set_col_wysiwyg')) $dg->set_col_wysiwyg($col_name);
             if ($title) $dg->set_col_title($col_name, $title);
             if ($align) $dg->set_col_align($col_name, $align);
             if ($width) $dg->set_col_width($col_name, $width);
@@ -158,7 +159,7 @@ if ($shareKey) {
                 }
             }
     
-            if ($cond_format) {
+            if ($cond_format && method_exists($dg, 'set_conditional_format')) {
     
                 $params = json_decode($cond_format, true);
     
@@ -204,7 +205,11 @@ if ($shareKey) {
                             $dg->enable_advanced_search(true);
                         break;
                         case 'global':
-                            $dg->enable_global_search(true);
+                            if (method_exists($dg, 'enable_global_search')) {
+                                $dg->enable_global_search(true);
+                            } else {
+                                $dg->enable_search(true);   // Lite: toolbar search instead
+                            }
                         break;
                     }
 
