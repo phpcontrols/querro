@@ -15,6 +15,7 @@ if ($path != '/q/view.php' &&
     !isset($_SESSION['AccountId'])
     ) {
     header('Location: /login');
+    exit;
 }
 
 // Configurations
